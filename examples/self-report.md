@@ -1,7 +1,7 @@
 # Maintainer Signal: maintainer-signal
 
-Generated: 2026-06-03T00:00:00.000Z
-Repository: example/maintainer-signal
+Generated: 2026-06-02T23:34:20.828Z
+Repository: github.com/katoken54321go/maintainer-signal
 Signal score: 13/13 (100%)
 
 ## Repository Basics
@@ -25,8 +25,8 @@ Signal score: 13/13 (100%)
 | Signal | Value |
 | --- | --- |
 | Git repository | yes |
-| Commits in last 90 days | 1 |
-| Latest commit | 2026-06-03 Initial maintainer-signal release |
+| Commits in last 90 days | 3 |
+| Latest commit | 2026-06-03 Add GitHub Actions CI |
 | Release tags | 1 |
 | GitHub Actions workflows | 1 |
 | Test script | node --test |

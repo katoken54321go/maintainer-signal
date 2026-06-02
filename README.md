@@ -40,6 +40,7 @@ maintainer-signal --repo /path/to/repo
 maintainer-signal --repo /path/to/repo --repo-label owner/project
 maintainer-signal --repo /path/to/repo --format json
 maintainer-signal --repo /path/to/repo --since-days 180 --out report.md
+maintainer-signal --repo /path/to/repo --strict --fail-under 90
 ```
 
 ## What It Checks
@@ -55,11 +56,12 @@ See [`examples/demo-report.md`](examples/demo-report.md) for a sample report for
 
 The `--repo-label` option is useful when publishing reports because it avoids leaking local absolute paths.
 
+See [`examples/self-report.md`](examples/self-report.md) for a report generated against this repository. Usage evidence is tracked in [`docs/USAGE_EVIDENCE.md`](docs/USAGE_EVIDENCE.md).
+
 ## Roadmap
 
 - Add optional GitHub API mode for public issue, PR, release, and dependent-project signals.
 - Add npm, PyPI, crates.io, and GitHub release download signal collectors.
-- Add a `--strict` mode that fails CI when core maintainer hygiene is missing.
 - Add report sections for security posture, documentation freshness, and release cadence.
 - Add localization for Japanese maintainer reports.
 

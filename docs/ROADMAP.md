@@ -2,8 +2,7 @@
 
 ## Near Term
 
-- Add GitHub Actions CI once repository credentials can update workflow files.
-- Add `--strict` and `--fail-under` options for CI-friendly repository health checks.
+- Publish a second release with CI and usage evidence.
 - Add public GitHub release and issue signal collectors.
 - Add npm download signal collection for published JavaScript packages.
 - Add Japanese report localization.

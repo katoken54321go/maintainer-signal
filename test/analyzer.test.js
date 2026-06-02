@@ -5,16 +5,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp } from "node:fs/promises";
 import { analyzeRepository } from "../src/analyzer.js";
-import { parseArgs } from "../src/cli.js";
+import { evaluateHealthGate, parseArgs } from "../src/cli.js";
 import { renderMarkdown } from "../src/report.js";
 
 test("parseArgs reads common options", () => {
-  const options = parseArgs(["--repo", "demo", "--repo-label", "owner/demo", "--format", "json", "--since-days", "30"]);
+  const options = parseArgs(["--repo", "demo", "--repo-label", "owner/demo", "--format", "json", "--since-days", "30", "--strict", "--fail-under", "80"]);
 
   assert.equal(options.repo, "demo");
   assert.equal(options.repoLabel, "owner/demo");
   assert.equal(options.format, "json");
   assert.equal(options.sinceDays, 30);
+  assert.equal(options.strict, true);
+  assert.equal(options.failUnder, 80);
 });
 
 test("analyzeRepository detects repository hygiene files", async () => {
@@ -46,4 +48,15 @@ test("renderMarkdown includes application evidence guidance", async () => {
 
   assert.match(markdown, /Application Evidence Draft/);
   assert.match(markdown, /Recommended Next Steps/);
+});
+
+test("evaluateHealthGate fails strict mode when recommendations remain", () => {
+  const report = {
+    score: { percent: 92 },
+    recommendations: ["Add CI."]
+  };
+
+  assert.equal(evaluateHealthGate(report, { strict: true, failUnder: null }).ok, false);
+  assert.equal(evaluateHealthGate(report, { strict: false, failUnder: 90 }).ok, true);
+  assert.equal(evaluateHealthGate(report, { strict: false, failUnder: 95 }).ok, false);
 });

@@ -6,7 +6,7 @@ import { renderJson, renderMarkdown } from "./report.js";
 const helpText = `maintainer-signal
 
 Usage:
-  maintainer-signal [--repo <path>] [--repo-label <label>] [--format markdown|json] [--out <file>] [--since-days <days>]
+  maintainer-signal [--repo <path>] [--repo-label <label>] [--format markdown|json] [--out <file>] [--since-days <days>] [--strict] [--fail-under <percent>]
 
 Options:
   --repo <path>        Repository to analyze. Defaults to the current directory.
@@ -14,6 +14,8 @@ Options:
   --format <format>    Output format: markdown or json. Defaults to markdown.
   --out <file>         Write output to a file instead of stdout.
   --since-days <days>  Count recent commits within this window. Defaults to 90.
+  --strict             Exit non-zero when any recommendation remains.
+  --fail-under <pct>   Exit non-zero when the score is below this percentage.
   --help               Show this help.
 `;
 
@@ -38,10 +40,15 @@ export async function runCli(argv) {
     await mkdir(dirname(outPath), { recursive: true });
     await writeFile(outPath, rendered, "utf8");
     console.log(`Wrote ${outPath}`);
-    return;
+  } else {
+    console.log(rendered);
   }
 
-  console.log(rendered);
+  const gate = evaluateHealthGate(report, options);
+  if (!gate.ok) {
+    console.error(gate.message);
+    process.exitCode = 1;
+  }
 }
 
 export function parseArgs(argv) {
@@ -51,6 +58,8 @@ export function parseArgs(argv) {
     out: null,
     repo: ".",
     repoLabel: null,
+    strict: false,
+    failUnder: null,
     sinceDays: 90
   };
 
@@ -100,10 +109,44 @@ export function parseArgs(argv) {
       continue;
     }
 
+    if (arg === "--strict") {
+      options.strict = true;
+      continue;
+    }
+
+    if (arg === "--fail-under") {
+      const rawValue = readValue(argv, index, arg);
+      const parsed = Number.parseInt(rawValue, 10);
+      if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) {
+        throw new Error("--fail-under must be an integer from 0 to 100");
+      }
+      options.failUnder = parsed;
+      index += 1;
+      continue;
+    }
+
     throw new Error(`Unknown option: ${arg}`);
   }
 
   return options;
+}
+
+export function evaluateHealthGate(report, options) {
+  if (options.failUnder !== null && report.score.percent < options.failUnder) {
+    return {
+      ok: false,
+      message: `Signal score ${report.score.percent}% is below --fail-under ${options.failUnder}%.`
+    };
+  }
+
+  if (options.strict && report.recommendations.length > 0) {
+    return {
+      ok: false,
+      message: `Strict mode failed with ${report.recommendations.length} recommendation(s).`
+    };
+  }
+
+  return { ok: true, message: "" };
 }
 
 function readValue(argv, index, name) {
