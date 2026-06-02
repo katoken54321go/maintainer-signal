@@ -3,7 +3,7 @@ export function renderMarkdown(report) {
     `# Maintainer Signal: ${report.projectName}`,
     "",
     `Generated: ${report.generatedAt}`,
-    `Repository: ${report.root}`,
+    `Repository: ${report.repositoryLabel ?? report.root}`,
     `Signal score: ${report.score.passed}/${report.score.total} (${report.score.percent}%)`,
     "",
     "## Repository Basics",
@@ -16,6 +16,9 @@ export function renderMarkdown(report) {
       ["Security policy", mark(report.files.security)],
       ["Changelog", mark(report.files.changelog)],
       ["Issue templates", mark(report.files.issueTemplates)],
+      ["Pull request template", mark(report.files.pullRequestTemplate)],
+      ["Support policy", mark(report.files.support)],
+      ["Code owners", mark(report.files.codeowners)],
       ["Agent guidance", mark(report.files.codexGuidance)]
     ]),
     "",

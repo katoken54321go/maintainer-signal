@@ -2,7 +2,7 @@
 
 Generated: 2026-06-03T00:00:00.000Z
 Repository: example/maintainer-signal
-Signal score: 9/10 (90%)
+Signal score: 12/13 (92%)
 
 ## Repository Basics
 
@@ -15,6 +15,9 @@ Signal score: 9/10 (90%)
 | Security policy | yes |
 | Changelog | yes |
 | Issue templates | yes |
+| Pull request template | yes |
+| Support policy | yes |
+| Code owners | yes |
 | Agent guidance | yes |
 
 ## Maintenance Signals

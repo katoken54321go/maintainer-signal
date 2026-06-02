@@ -6,10 +6,11 @@ import { renderJson, renderMarkdown } from "./report.js";
 const helpText = `maintainer-signal
 
 Usage:
-  maintainer-signal [--repo <path>] [--format markdown|json] [--out <file>] [--since-days <days>]
+  maintainer-signal [--repo <path>] [--repo-label <label>] [--format markdown|json] [--out <file>] [--since-days <days>]
 
 Options:
   --repo <path>        Repository to analyze. Defaults to the current directory.
+  --repo-label <label> Public label to show in Markdown reports instead of the local path.
   --format <format>    Output format: markdown or json. Defaults to markdown.
   --out <file>         Write output to a file instead of stdout.
   --since-days <days>  Count recent commits within this window. Defaults to 90.
@@ -26,6 +27,7 @@ export async function runCli(argv) {
 
   const report = await analyzeRepository({
     repoPath: options.repo,
+    repoLabel: options.repoLabel,
     sinceDays: options.sinceDays
   });
 
@@ -48,6 +50,7 @@ export function parseArgs(argv) {
     help: false,
     out: null,
     repo: ".",
+    repoLabel: null,
     sinceDays: 90
   };
 
@@ -70,6 +73,12 @@ export function parseArgs(argv) {
       if (!["markdown", "json"].includes(options.format)) {
         throw new Error("--format must be either markdown or json");
       }
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--repo-label") {
+      options.repoLabel = readValue(argv, index, arg);
       index += 1;
       continue;
     }

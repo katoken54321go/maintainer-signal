@@ -41,3 +41,10 @@ API credits would be used to build optional Codex-powered maintainer workflows: 
 - Public examples of generated reports.
 - Issues triaged or pull requests reviewed with the tool.
 - Maintainer feedback and external mentions.
+
+## Current Public Evidence
+
+- Public repository: `https://github.com/katoken54321go/maintainer-signal`
+- Initial release: `v0.1.0`
+- Example report: `examples/demo-report.md`
+- Maintainer hygiene: README, license, contribution guide, code of conduct, security policy, support policy, issue templates, pull request template, CODEOWNERS, changelog, roadmap, and AGENTS.md.

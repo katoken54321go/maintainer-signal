@@ -9,9 +9,10 @@ import { parseArgs } from "../src/cli.js";
 import { renderMarkdown } from "../src/report.js";
 
 test("parseArgs reads common options", () => {
-  const options = parseArgs(["--repo", "demo", "--format", "json", "--since-days", "30"]);
+  const options = parseArgs(["--repo", "demo", "--repo-label", "owner/demo", "--format", "json", "--since-days", "30"]);
 
   assert.equal(options.repo, "demo");
+  assert.equal(options.repoLabel, "owner/demo");
   assert.equal(options.format, "json");
   assert.equal(options.sinceDays, 30);
 });
@@ -23,6 +24,9 @@ test("analyzeRepository detects repository hygiene files", async () => {
   await writeFile(join(repo, "README.md"), "# demo\n");
   await writeFile(join(repo, "LICENSE"), "MIT\n");
   await writeFile(join(repo, ".github", "ISSUE_TEMPLATE", "bug_report.md"), "# Bug report\n");
+  await writeFile(join(repo, ".github", "pull_request_template.md"), "# Pull request\n");
+  await writeFile(join(repo, ".github", "CODEOWNERS"), "* @demo\n");
+  await writeFile(join(repo, "SUPPORT.md"), "# Support\n");
 
   const report = await analyzeRepository({ repoPath: repo });
 
@@ -30,6 +34,9 @@ test("analyzeRepository detects repository hygiene files", async () => {
   assert.equal(report.files.readme, true);
   assert.equal(report.files.license, true);
   assert.equal(report.files.issueTemplates, true);
+  assert.equal(report.files.pullRequestTemplate, true);
+  assert.equal(report.files.codeowners, true);
+  assert.equal(report.files.support, true);
   assert.equal(report.automation.testScript, "node --test");
 });
 

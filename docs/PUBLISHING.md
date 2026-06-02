@@ -7,7 +7,7 @@ git init
 git add .
 git commit -m "Initial maintainer-signal release"
 git branch -M main
-git remote add origin git@github.com:YOUR-USER/maintainer-signal.git
+git remote add origin git@github.com:katoken54321go/maintainer-signal.git
 git push -u origin main
 ```
 

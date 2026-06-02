@@ -5,7 +5,7 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-export async function analyzeRepository({ repoPath = ".", sinceDays = 90 } = {}) {
+export async function analyzeRepository({ repoPath = ".", repoLabel = null, sinceDays = 90 } = {}) {
   const root = resolve(repoPath);
   const projectName = await detectProjectName(root);
   const files = await collectFileSignals(root);
@@ -15,6 +15,7 @@ export async function analyzeRepository({ repoPath = ".", sinceDays = 90 } = {})
   return {
     generatedAt: new Date().toISOString(),
     projectName,
+    repositoryLabel: repoLabel,
     root,
     sinceDays,
     files,
@@ -39,6 +40,9 @@ async function collectFileSignals(root) {
     security: await existsAny(root, ["SECURITY.md", ".github/SECURITY.md"]),
     changelog: await existsAny(root, ["CHANGELOG.md", "docs/CHANGELOG.md"]),
     issueTemplates: await directoryHasFiles(join(root, ".github", "ISSUE_TEMPLATE")),
+    pullRequestTemplate: await existsAny(root, ["PULL_REQUEST_TEMPLATE.md", ".github/pull_request_template.md"]),
+    support: await existsAny(root, ["SUPPORT.md", ".github/SUPPORT.md"]),
+    codeowners: await existsAny(root, ["CODEOWNERS", ".github/CODEOWNERS", "docs/CODEOWNERS"]),
     codexGuidance: await existsAny(root, ["AGENTS.md", ".codex/AGENTS.md"])
   };
 }
@@ -99,6 +103,9 @@ function scoreSignals({ files, git, automation }) {
     files.codeOfConduct,
     files.security,
     files.issueTemplates,
+    files.pullRequestTemplate,
+    files.support,
+    files.codeowners,
     files.codexGuidance,
     automation.githubActions.length > 0,
     Boolean(automation.testScript),
@@ -121,6 +128,9 @@ function buildRecommendations({ files, git, automation }) {
   if (!files.contributing) recommendations.push("Add CONTRIBUTING.md with local setup, test commands, and contribution scope.");
   if (!files.security) recommendations.push("Add SECURITY.md with a vulnerability reporting path.");
   if (!files.issueTemplates) recommendations.push("Add issue templates to make bug reports and feature requests easier to triage.");
+  if (!files.pullRequestTemplate) recommendations.push("Add a pull request template so contributors know the expected validation steps.");
+  if (!files.support) recommendations.push("Add SUPPORT.md so users know where to ask questions and where not to send secrets.");
+  if (!files.codeowners) recommendations.push("Add CODEOWNERS to make review ownership explicit.");
   if (!files.codexGuidance) recommendations.push("Add AGENTS.md so Codex and other agents know how to work in the repository.");
   if (automation.githubActions.length === 0) recommendations.push("Add a GitHub Actions workflow that runs checks on pull requests.");
   if (!automation.testScript) recommendations.push("Add a test script, even if the first version uses a small smoke test.");
