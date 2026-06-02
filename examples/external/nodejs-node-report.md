@@ -1,8 +1,8 @@
-# Maintainer Signal: maintainer-signal
+# Maintainer Signal: node
 
-Generated: 2026-06-02T23:51:24.772Z
-Repository: github.com/katoken54321go/maintainer-signal
-Signal score: 13/13 (100%)
+Generated: 2026-06-02T23:51:42.764Z
+Repository: github.com/nodejs/node
+Signal score: 11/13 (85%)
 
 ## Repository Basics
 
@@ -18,19 +18,32 @@ Signal score: 13/13 (100%)
 | Pull request template | yes |
 | Support policy | yes |
 | Code owners | yes |
-| Agent guidance | yes |
+| Agent guidance | no |
 
 ## Maintenance Signals
 
 | Signal | Value |
 | --- | --- |
 | Git repository | yes |
-| Commits in last 90 days | 4 |
-| Latest commit | 2026-06-03 Add strict health gates and usage evidence |
-| Release tags | 2 |
-| GitHub Actions workflows | 1 |
-| Test script | node --test |
-| Check script | node --check bin/maintainer-signal.js && node --check src/*.js |
+| Commits in last 90 days | 100+ |
+| Latest commit | 2026-06-02 doc: clarify tty raw mode applies to input processing only |
+| Release tags | 100+ |
+| GitHub Actions workflows | 36 |
+| Test script | n/a |
+| Check script | n/a |
+
+## Public GitHub Signals
+
+| Signal | Value |
+| --- | --- |
+| Repository | nodejs/node |
+| Default branch | main |
+| Stars | 117492 |
+| Forks | 35735 |
+| Open issues | 2466 |
+| License | NOASSERTION |
+| Latest release | v26.3.0 (2026-06-01) |
+| Topics | javascript, js, linux, macos, mit, node, nodejs, runtime, windows |
 
 ## Application Evidence Draft
 
@@ -42,4 +55,5 @@ Signal score: 13/13 (100%)
 
 ## Recommended Next Steps
 
-- No obvious repository hygiene gaps found. Focus on documenting adoption and maintenance impact.
+- Add AGENTS.md so Codex and other agents know how to work in the repository.
+- Add a test script, even if the first version uses a small smoke test.

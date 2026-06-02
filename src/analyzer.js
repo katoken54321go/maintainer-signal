@@ -5,7 +5,19 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-export async function analyzeRepository({ repoPath = ".", repoLabel = null, sinceDays = 90 } = {}) {
+const githubApiBase = "https://api.github.com";
+
+export async function analyzeRepository({
+  fetchImpl = globalThis.fetch,
+  githubRepo = null,
+  repoPath = ".",
+  repoLabel = null,
+  sinceDays = 90
+} = {}) {
+  if (githubRepo) {
+    return analyzeGitHubRepository({ fetchImpl, githubRepo, repoLabel, sinceDays });
+  }
+
   const root = resolve(repoPath);
   const projectName = await detectProjectName(root);
   const files = await collectFileSignals(root);
@@ -21,6 +33,73 @@ export async function analyzeRepository({ repoPath = ".", repoLabel = null, sinc
     files,
     git,
     automation,
+    score: scoreSignals({ files, git, automation }),
+    recommendations: buildRecommendations({ files, git, automation })
+  };
+}
+
+async function analyzeGitHubRepository({ fetchImpl, githubRepo, repoLabel, sinceDays }) {
+  if (typeof fetchImpl !== "function") {
+    throw new Error("GitHub analysis requires a fetch implementation.");
+  }
+
+  const fullName = normalizeGitHubRepo(githubRepo);
+  const repo = await githubJson(fetchImpl, `/repos/${fullName}`);
+  const defaultBranch = repo.default_branch ?? "main";
+  const tree = await githubJson(fetchImpl, `/repos/${fullName}/git/trees/${encodeURIComponent(defaultBranch)}?recursive=1`);
+  const treeItems = Array.isArray(tree.tree) ? tree.tree : [];
+  const paths = new Set(treeItems.map((item) => item.path.toLowerCase()));
+  const packageJson = await readGitHubPackageJson(fetchImpl, fullName, treeItems);
+  const commits = await githubJson(fetchImpl, `/repos/${fullName}/commits?since=${encodeURIComponent(sinceDate(sinceDays))}&per_page=100`);
+  const tags = await githubJson(fetchImpl, `/repos/${fullName}/tags?per_page=100`);
+  const latestRelease = await githubJson(fetchImpl, `/repos/${fullName}/releases/latest`, { allowMissing: true });
+
+  const files = collectGitHubFileSignals(paths);
+  const git = {
+    available: true,
+    recentCommitCount: Array.isArray(commits) ? commits.length : 0,
+    recentCommitCountCapped: Array.isArray(commits) && commits.length === 100,
+    latestCommit: Array.isArray(commits) && commits[0] ? {
+      sha: commits[0].sha,
+      author: commits[0].commit?.author?.name ?? commits[0].author?.login ?? "unknown",
+      date: commits[0].commit?.author?.date?.slice(0, 10) ?? "unknown",
+      subject: firstLine(commits[0].commit?.message ?? "")
+    } : null,
+    tagCount: Array.isArray(tags) ? tags.length : 0,
+    tagCountCapped: Array.isArray(tags) && tags.length === 100
+  };
+  const automation = {
+    githubActions: [...paths].filter((path) => path.startsWith(".github/workflows/") && (path.endsWith(".yml") || path.endsWith(".yaml"))),
+    testScript: packageJson?.scripts?.test ?? null,
+    checkScript: packageJson?.scripts?.check ?? null
+  };
+
+  return {
+    generatedAt: new Date().toISOString(),
+    projectName: repo.name ?? fullName.split("/")[1],
+    repositoryLabel: repoLabel ?? `github.com/${fullName}`,
+    root: null,
+    sinceDays,
+    files,
+    git,
+    automation,
+    github: {
+      fullName,
+      htmlUrl: repo.html_url,
+      description: repo.description,
+      defaultBranch,
+      stars: repo.stargazers_count ?? 0,
+      forks: repo.forks_count ?? 0,
+      openIssues: repo.open_issues_count ?? 0,
+      watchers: repo.subscribers_count ?? repo.watchers_count ?? 0,
+      topics: repo.topics ?? [],
+      license: repo.license?.spdx_id ?? repo.license?.name ?? null,
+      latestRelease: latestRelease ? {
+        name: latestRelease.name,
+        tagName: latestRelease.tag_name,
+        publishedAt: latestRelease.published_at
+      } : null
+    },
     score: scoreSignals({ files, git, automation }),
     recommendations: buildRecommendations({ files, git, automation })
   };
@@ -44,6 +123,22 @@ async function collectFileSignals(root) {
     support: await existsAny(root, ["SUPPORT.md", ".github/SUPPORT.md"]),
     codeowners: await existsAny(root, ["CODEOWNERS", ".github/CODEOWNERS", "docs/CODEOWNERS"]),
     codexGuidance: await existsAny(root, ["AGENTS.md", ".codex/AGENTS.md"])
+  };
+}
+
+function collectGitHubFileSignals(paths) {
+  return {
+    readme: hasAnyPath(paths, ["readme.md", "readme"]),
+    license: hasAnyPath(paths, ["license", "license.md", "copying", "copying.md"]),
+    contributing: hasAnyPath(paths, ["contributing.md", ".github/contributing.md"]),
+    codeOfConduct: hasAnyPath(paths, ["code_of_conduct.md", ".github/code_of_conduct.md"]),
+    security: hasAnyPath(paths, ["security.md", ".github/security.md"]),
+    changelog: hasAnyPath(paths, ["changelog.md", "docs/changelog.md"]),
+    issueTemplates: hasPathPrefix(paths, ".github/issue_template/"),
+    pullRequestTemplate: hasAnyPath(paths, ["pull_request_template.md", ".github/pull_request_template.md"]),
+    support: hasAnyPath(paths, ["support.md", ".github/support.md"]),
+    codeowners: hasAnyPath(paths, ["codeowners", ".github/codeowners", "docs/codeowners"]),
+    codexGuidance: hasAnyPath(paths, ["agents.md", ".codex/agents.md"])
   };
 }
 
@@ -192,4 +287,72 @@ async function runGit(cwd, args) {
       stderr: error.stderr ?? error.message
     };
   }
+}
+
+function normalizeGitHubRepo(input) {
+  const cleaned = input.replace(/^https:\/\/github\.com\//, "").replace(/\.git$/, "").replace(/\/$/, "");
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(cleaned)) {
+    throw new Error("--github-repo must be in owner/name form.");
+  }
+  return cleaned;
+}
+
+async function githubJson(fetchImpl, path, { allowMissing = false } = {}) {
+  const response = await fetchImpl(`${githubApiBase}${path}`, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      "User-Agent": "maintainer-signal"
+    }
+  });
+
+  if (allowMissing && response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`GitHub API request failed (${response.status}) for ${path}`);
+  }
+
+  return response.json();
+}
+
+async function readGitHubPackageJson(fetchImpl, fullName, treeItems) {
+  const packageItem = treeItems.find((item) => item.path === "package.json" && item.type === "blob");
+  if (!packageItem?.sha) {
+    return null;
+  }
+
+  const blob = await githubJson(fetchImpl, `/repos/${fullName}/git/blobs/${packageItem.sha}`);
+  if (blob.encoding !== "base64" || !blob.content) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(Buffer.from(blob.content, "base64").toString("utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function sinceDate(sinceDays) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() - sinceDays);
+  return date.toISOString();
+}
+
+function firstLine(value) {
+  return value.split("\n")[0] ?? "";
+}
+
+function hasAnyPath(paths, candidates) {
+  return candidates.some((candidate) => paths.has(candidate));
+}
+
+function hasPathPrefix(paths, prefix) {
+  for (const path of paths) {
+    if (path.startsWith(prefix)) {
+      return true;
+    }
+  }
+  return false;
 }

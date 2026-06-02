@@ -6,11 +6,12 @@ import { renderJson, renderMarkdown } from "./report.js";
 const helpText = `maintainer-signal
 
 Usage:
-  maintainer-signal [--repo <path>] [--repo-label <label>] [--format markdown|json] [--out <file>] [--since-days <days>] [--strict] [--fail-under <percent>]
+  maintainer-signal [--repo <path>] [--repo-label <label>] [--github-repo <owner/name>] [--format markdown|json] [--out <file>] [--since-days <days>] [--strict] [--fail-under <percent>]
 
 Options:
   --repo <path>        Repository to analyze. Defaults to the current directory.
   --repo-label <label> Public label to show in Markdown reports instead of the local path.
+  --github-repo <repo> Analyze a public GitHub repository through the GitHub REST API.
   --format <format>    Output format: markdown or json. Defaults to markdown.
   --out <file>         Write output to a file instead of stdout.
   --since-days <days>  Count recent commits within this window. Defaults to 90.
@@ -28,6 +29,7 @@ export async function runCli(argv) {
   }
 
   const report = await analyzeRepository({
+    githubRepo: options.githubRepo,
     repoPath: options.repo,
     repoLabel: options.repoLabel,
     sinceDays: options.sinceDays
@@ -60,6 +62,7 @@ export function parseArgs(argv) {
     repoLabel: null,
     strict: false,
     failUnder: null,
+    githubRepo: null,
     sinceDays: 90
   };
 
@@ -88,6 +91,12 @@ export function parseArgs(argv) {
 
     if (arg === "--repo-label") {
       options.repoLabel = readValue(argv, index, arg);
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--github-repo") {
+      options.githubRepo = readValue(argv, index, arg);
       index += 1;
       continue;
     }

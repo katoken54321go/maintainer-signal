@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Updated GitHub Actions to Node 24-backed action versions.
+- Added optional public GitHub repository signal collection.
+- Added external public repository evidence reports.
+
 ## 0.2.0
 
 - Added GitHub Actions CI.

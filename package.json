@@ -1,6 +1,6 @@
 {
   "name": "maintainer-signal",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A small CLI that turns repository health signals into an evidence packet for open source maintainers.",
   "type": "module",
   "license": "MIT",

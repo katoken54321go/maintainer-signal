@@ -41,6 +41,7 @@ maintainer-signal --repo /path/to/repo --repo-label owner/project
 maintainer-signal --repo /path/to/repo --format json
 maintainer-signal --repo /path/to/repo --since-days 180 --out report.md
 maintainer-signal --repo /path/to/repo --strict --fail-under 90
+maintainer-signal --github-repo owner/project --out report.md
 ```
 
 ## What It Checks
@@ -48,6 +49,7 @@ maintainer-signal --repo /path/to/repo --strict --fail-under 90
 - Repository basics: README, license, contributing guide, code of conduct, security policy, changelog, issue templates, and `AGENTS.md`.
 - Review and support basics: pull request template, support policy, and CODEOWNERS.
 - Maintenance signals: git availability, recent commits, latest commit, release tags, GitHub Actions workflows, test script, and check script.
+- Optional public GitHub signals: stars, forks, open issues, topics, license, latest release, and recent commits.
 - Application evidence draft: a short template for describing maintainer role, user impact, adoption evidence, and responsible use.
 
 ## Example Output
@@ -57,6 +59,11 @@ See [`examples/demo-report.md`](examples/demo-report.md) for a sample report for
 The `--repo-label` option is useful when publishing reports because it avoids leaking local absolute paths.
 
 See [`examples/self-report.md`](examples/self-report.md) for a report generated against this repository. Usage evidence is tracked in [`docs/USAGE_EVIDENCE.md`](docs/USAGE_EVIDENCE.md).
+
+External public examples:
+
+- [`examples/external/openai-cookbook-report.md`](examples/external/openai-cookbook-report.md)
+- [`examples/external/nodejs-node-report.md`](examples/external/nodejs-node-report.md)
 
 ## Roadmap
 

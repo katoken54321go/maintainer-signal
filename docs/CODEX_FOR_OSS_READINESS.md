@@ -47,5 +47,7 @@ API credits would be used to build optional Codex-powered maintainer workflows: 
 - Public repository: `https://github.com/katoken54321go/maintainer-signal`
 - Initial release: `v0.1.0`
 - Follow-up release: `v0.2.0`
-- Example reports: `examples/demo-report.md` and `examples/self-report.md`
+- Follow-up release: `v0.3.0`
+- Example reports: `examples/demo-report.md`, `examples/self-report.md`, and `examples/external/*.md`
 - Maintainer hygiene: README, license, contribution guide, code of conduct, security policy, support policy, issue templates, pull request template, CODEOWNERS, changelog, roadmap, AGENTS.md, and CI.
+- External evidence: public GitHub signal reports for `openai/openai-cookbook` and `nodejs/node`.

@@ -9,14 +9,80 @@ import { evaluateHealthGate, parseArgs } from "../src/cli.js";
 import { renderMarkdown } from "../src/report.js";
 
 test("parseArgs reads common options", () => {
-  const options = parseArgs(["--repo", "demo", "--repo-label", "owner/demo", "--format", "json", "--since-days", "30", "--strict", "--fail-under", "80"]);
+  const options = parseArgs(["--repo", "demo", "--repo-label", "owner/demo", "--github-repo", "owner/demo", "--format", "json", "--since-days", "30", "--strict", "--fail-under", "80"]);
 
   assert.equal(options.repo, "demo");
   assert.equal(options.repoLabel, "owner/demo");
+  assert.equal(options.githubRepo, "owner/demo");
   assert.equal(options.format, "json");
   assert.equal(options.sinceDays, 30);
   assert.equal(options.strict, true);
   assert.equal(options.failUnder, 80);
+});
+
+test("analyzeRepository collects public GitHub signals with injected fetch", async () => {
+  const responses = new Map([
+    ["https://api.github.com/repos/example/demo", {
+      default_branch: "main",
+      description: "Demo repo",
+      forks_count: 2,
+      html_url: "https://github.com/example/demo",
+      license: { spdx_id: "MIT" },
+      name: "demo",
+      open_issues_count: 3,
+      stargazers_count: 10,
+      topics: ["oss"],
+      watchers_count: 4
+    }],
+    ["https://api.github.com/repos/example/demo/git/trees/main?recursive=1", {
+      tree: [
+        { path: "README.md", type: "blob" },
+        { path: "LICENSE", type: "blob" },
+        { path: ".github/workflows/ci.yml", type: "blob" },
+        { path: "package.json", type: "blob", sha: "pkg" }
+      ]
+    }],
+    ["https://api.github.com/repos/example/demo/git/blobs/pkg", {
+      content: Buffer.from(JSON.stringify({ scripts: { test: "node --test" } })).toString("base64"),
+      encoding: "base64"
+    }],
+    ["https://api.github.com/repos/example/demo/commits?since=2026-03-01T00%3A00%3A00.000Z&per_page=100", [
+      { sha: "abc", commit: { author: { date: "2026-05-01T00:00:00Z", name: "A" }, message: "Initial commit\n\nbody" } }
+    ]],
+    ["https://api.github.com/repos/example/demo/tags?per_page=100", [{ name: "v1.0.0" }]],
+    ["https://api.github.com/repos/example/demo/releases/latest", { tag_name: "v1.0.0", published_at: "2026-05-02T00:00:00Z" }]
+  ]);
+  const realDate = Date;
+  global.Date = class extends realDate {
+    constructor(...args) {
+      return args.length === 0 ? new realDate("2026-05-30T00:00:00Z") : new realDate(...args);
+    }
+    static now() {
+      return new realDate("2026-05-30T00:00:00Z").getTime();
+    }
+  };
+
+  try {
+    const fetchImpl = async (url) => {
+      assert.equal(url.startsWith("https://api.github.com/"), true);
+      const body = responses.get(url);
+      return {
+        ok: body !== undefined,
+        status: body === undefined ? 404 : 200,
+        json: async () => body
+      };
+    };
+    const report = await analyzeRepository({ fetchImpl, githubRepo: "example/demo", sinceDays: 90 });
+
+    assert.equal(report.repositoryLabel, "github.com/example/demo");
+    assert.equal(report.github.stars, 10);
+    assert.equal(report.files.readme, true);
+    assert.deepEqual(report.automation.githubActions, [".github/workflows/ci.yml"]);
+    assert.equal(report.git.latestCommit.subject, "Initial commit");
+    assert.equal(report.git.recentCommitCountCapped, false);
+  } finally {
+    global.Date = realDate;
+  }
 });
 
 test("analyzeRepository detects repository hygiene files", async () => {

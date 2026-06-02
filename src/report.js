@@ -26,13 +26,14 @@ export function renderMarkdown(report) {
     "",
     table([
       ["Git repository", mark(report.git.available)],
-      [`Commits in last ${report.sinceDays} days`, value(report.git.recentCommitCount)],
+      [`Commits in last ${report.sinceDays} days`, countValue(report.git.recentCommitCount, report.git.recentCommitCountCapped)],
       ["Latest commit", report.git.latestCommit ? `${report.git.latestCommit.date} ${report.git.latestCommit.subject}` : "n/a"],
-      ["Release tags", value(report.git.tagCount)],
+      ["Release tags", countValue(report.git.tagCount, report.git.tagCountCapped)],
       ["GitHub Actions workflows", value(report.automation.githubActions.length)],
       ["Test script", report.automation.testScript ?? "n/a"],
       ["Check script", report.automation.checkScript ?? "n/a"]
     ]),
+    ...renderGitHubSignals(report),
     "",
     "## Application Evidence Draft",
     "",
@@ -50,6 +51,28 @@ export function renderMarkdown(report) {
   return `${lines.join("\n")}\n`;
 }
 
+function renderGitHubSignals(report) {
+  if (!report.github) {
+    return [];
+  }
+
+  return [
+    "",
+    "## Public GitHub Signals",
+    "",
+    table([
+      ["Repository", report.github.fullName],
+      ["Default branch", report.github.defaultBranch],
+      ["Stars", value(report.github.stars)],
+      ["Forks", value(report.github.forks)],
+      ["Open issues", value(report.github.openIssues)],
+      ["License", report.github.license ?? "n/a"],
+      ["Latest release", report.github.latestRelease ? `${report.github.latestRelease.tagName} (${report.github.latestRelease.publishedAt?.slice(0, 10) ?? "unknown"})` : "n/a"],
+      ["Topics", report.github.topics.length > 0 ? report.github.topics.join(", ") : "n/a"]
+    ])
+  ];
+}
+
 export function renderJson(report) {
   return `${JSON.stringify(report, null, 2)}\n`;
 }
@@ -65,6 +88,11 @@ function mark(value) {
 
 function value(input) {
   return input === null || input === undefined ? "n/a" : String(input);
+}
+
+function countValue(input, capped = false) {
+  const rendered = value(input);
+  return capped ? `${rendered}+` : rendered;
 }
 
 function renderRecommendations(recommendations) {

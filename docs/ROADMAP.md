@@ -2,10 +2,10 @@
 
 ## Near Term
 
-- Publish a second release with CI and usage evidence.
-- Add public GitHub release and issue signal collectors.
 - Add npm download signal collection for published JavaScript packages.
 - Add Japanese report localization.
+- Collect maintainer feedback from public issue comments or pull requests.
+- Add support for non-JavaScript project test signals.
 
 ## Principles
 
