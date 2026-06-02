@@ -1,0 +1,25 @@
+{
+  "name": "maintainer-signal",
+  "version": "0.1.0",
+  "description": "A small CLI that turns repository health signals into an evidence packet for open source maintainers.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "maintainer-signal": "./bin/maintainer-signal.js"
+  },
+  "scripts": {
+    "check": "node --check bin/maintainer-signal.js && node --check src/*.js",
+    "test": "node --test",
+    "snapshot": "node bin/maintainer-signal.js --repo . --out maintainer-signal-report.md"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "open-source",
+    "maintainers",
+    "oss",
+    "codex",
+    "github"
+  ]
+}
